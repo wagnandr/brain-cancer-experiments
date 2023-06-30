@@ -21,7 +21,10 @@ def create_path(directory='data-bwohlmuth', patient_id='008', timepoint='preop',
 def calculate_diffusion_tensor(directory='data-bwohlmuth', patient_id='008', timepoint='preop'):
     """
     Calculates the diffusion tensor from diffusion tensor imaging information and saves it on disk.
-    This takes a while, hence should not be called lightly. 
+    This takes a while, hence should not be called lightly. :P 
+    In dipy we basically solve
+        S_i / S_0 = exp(- b g^T D g)
+    for D, where the observations S_i, S_0 are saved in the nii.gz files, and b and g are in the bval and bvec files.
     """
     # since dipy is just needed here (and will at some point not be needed anymore), wo only import it locally:
     import dipy.reconst.dti as dti
