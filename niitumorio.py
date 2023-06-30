@@ -11,7 +11,7 @@ import nibabel as nib
 
 def create_path(directory='data-bwohlmuth', patient_id='008', timepoint='preop', data='dti', type='nii.gz'):
     """
-    Small utility script to generate paths, which fit Benes naming scheme.
+    Small utility script to generate paths, which fit Bene's naming scheme.
     """
     mainpath = os.path.join(directory, f'respond_tum_{patient_id}', f'{timepoint}')
     filename = f'sub-respond_tum_{patient_id}_ses-{timepoint}_space-sri_{data}.{type}'
@@ -65,7 +65,7 @@ def load_diffusion_tensor(directory='data-bwohlmuth', patient_id='008', timepoin
     return D
 
 
-def load_nifti_slice(path, offsets_left=(0,0,0), offsets_right=(None, None, None)):
+def load_nii(path, offsets_left=(0,0,0), offsets_right=(None, None, None)):
     """Loads only a small slice from a nifty file to save save space."""
     nii_field = nib.load(path)
     np_field = nii_field.get_fdata()
@@ -87,7 +87,7 @@ def get_bounds(field):
     ybounds = yy_masked.min(), yy_masked.max()
     zz_masked = zz[field > 0]
     zbounds = zz_masked.min(), zz_masked.max()
-    return [xbounds, ybounds, zbounds]
+    return np.array([xbounds, ybounds, zbounds])
 
 
 def _demo_diffusion_tensor():
@@ -97,10 +97,21 @@ def _demo_diffusion_tensor():
     parser.add_argument('--directory', help='Base path of the directory structure provided by Bene.', default='data-bwohlmuth')
     parser.add_argument('--patient-id', help='The patient id.', default='008')
     parser.add_argument('--timepoint', help='The point in time when the examination is done.', choices=('preop', 'postop', 'recurrence'), default='preop')
+    parser.add_argument('--create-all', help='Creates all the diffusion tensors of all the patients, if requested.', action='store_true')
     args = parser.parse_args()
-    calculate_diffusion_tensor(args.directory, args.patient_id, args.timepoint)
-    D = load_diffusion_tensor(args.directory, args.patient_id, args.timepoint)
-    print(f'D[0][0] = {D[0][0]}')
+    if args.create_all:
+        for patient_id in ['008', '019', '020']:
+            for timepoint in ('preop', 'postop', 'recurrence'): 
+                print(f'Started patient {patient_id} at {timepoint}.')
+                try:
+                    calculate_diffusion_tensor(args.directory, patient_id, timepoint)
+                except:
+                    print(f'Failed patient {patient_id} at {timepoint}.')
+                print(f'Succeeded patient {patient_id} at {timepoint}.')
+    else: 
+        calculate_diffusion_tensor(args.directory, args.patient_id, args.timepoint)
+        D = load_diffusion_tensor(args.directory, args.patient_id, args.timepoint)
+        print(f'D[0][0] = {D[0][0]}')
 
 
 if __name__ == '__main__':

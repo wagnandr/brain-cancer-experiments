@@ -4,16 +4,16 @@ import dolfin as df
 import argparse
 import random
 import math
-from data_io import load_matter, MatterField2D
 from block import block_assemble, block_mat, block_vec
 from block.algebraic.petsc import LU 
 from block.iterative import MinRes 
 
-from niitumorio import load_nifti_slice, create_path
+from niitumorio import load_nii, create_path
 from dolfintumorio import load_field 
 
 
 def load_2d_slice():
+    """Loads all the data needed to run a simulation."""
     directory = 'data-bwohlmuth'
     patient_id = '008'
     timepoint = 'postop'
@@ -25,7 +25,7 @@ def load_2d_slice():
     pixel_scale=1e-3
 
     path_bmask = create_path(directory, patient_id, timepoint, data='brainmask')
-    matter = load_nifti_slice(path_bmask, offsets_left, offsets_right)
+    matter = load_nii(path_bmask, offsets_left, offsets_right)
 
     print(matter.shape)
     Nx, Ny = (np.array(matter.shape) / 1).astype(np.int32)
@@ -34,7 +34,7 @@ def load_2d_slice():
 
     # load the tissue:
     matter_path = create_path(directory, patient_id, timepoint, data='tissuemask')
-    matter = load_nifti_slice(matter_path, offsets_left, offsets_right)
+    matter = load_nii(matter_path, offsets_left, offsets_right)
     # white matter
     np_wm = np.zeros(matter.shape) 
     np_wm[matter == 3] = 1.
@@ -50,7 +50,7 @@ def load_2d_slice():
 
     # load the segmentation and use it for initial conditions:
     segmentation_path = create_path(directory, patient_id, timepoint, data='seg')
-    np_seg = load_nifti_slice(segmentation_path, offsets_left, offsets_right)
+    np_seg = load_nii(segmentation_path, offsets_left, offsets_right)
     # set endema to something small
     np_seg[2 == np_seg] = 0.05
     # set necrosis to 1
@@ -61,7 +61,7 @@ def load_2d_slice():
 
     # mean diffusivity
     md_path = create_path(directory, patient_id, timepoint, data='md')
-    np_md = load_nifti_slice(md_path, offsets_left, offsets_right)
+    np_md = load_nii(md_path, offsets_left, offsets_right)
     md_field = load_field(DG0, np_md, 'md', pixel_scale)
 
     return mesh, wm_field, gm_field, csf_field, seg_field, md_field
@@ -168,7 +168,7 @@ def solve_reaction(V, phi_vec, tau, eps, landa):
     return phi
 
 
-if __name__ == '__main__':
+def _demo():
     parser = argparse.ArgumentParser(prog='Cahn Hilliard simulator for exporting mobilities to test preconditioners')
     parser.add_argument('--Nout', type=int, help='Multiple of time step width for which we write the output.', default=1)
     parser.add_argument('--tau', help='Time step width.', default=1)
@@ -241,3 +241,7 @@ if __name__ == '__main__':
 
         if it % args.Nout == 0:
             write_output(t)
+
+
+if __name__ == '__main__':
+    _demo()
